@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+# функция для преобразования mp3 в wav файл, с ним удобнее работать
 def from_mp3_to_wav(src):
     dst = src.replace(".mp3", ".wav")
 
@@ -12,6 +13,7 @@ def from_mp3_to_wav(src):
     return src.replace("mp3", "wav")
 
 
+# функция, определяющая наличие речи
 def contains_speech(src):
     if ".mp3" in src:
         src = from_mp3_to_wav(src)
