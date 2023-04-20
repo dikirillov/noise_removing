@@ -69,4 +69,4 @@ def bad_frequency_cleaner(src):
     return
 
 
-print(bad_frequency_cleaner("audio_files/test_audio/RockAndRoll.wav"))
+bad_frequency_cleaner("audio_files/test_audio/RockAndRoll.wav")
