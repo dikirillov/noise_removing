@@ -66,8 +66,6 @@ def bad_frequency_cleaner(src):
             pos += window_size
 
     scipy.io.wavfile.write(src[:-4] + "_correct" + ".wav", rate=rate, data=data)
-    plt.plot(data[:, 0])
-    plt.show()
     return
 
 
