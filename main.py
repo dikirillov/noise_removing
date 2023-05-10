@@ -115,6 +115,16 @@ def spectral_subtraction_filter(src):
     for channel in range(channels_cnt):
         pos = 0
         noise = np.fft.fft(data[:, channel][:window_size])
+        max_level = max(noise)
+        while pos + window_size < data_size:
+            transformed_audio = np.fft.fft(data[:, channel][pos: pos + window_size])
+            if max(transformed_audio) < max_level:
+                noise = transformed_audio
+                max_level = max(transformed_audio)
+
+            pos += window_size
+
+        pos = 0
         while pos + window_size < data_size:
             transformed_audio = np.fft.fft(data[:, channel][pos: pos + window_size]) - noise
             data[:, channel][pos: pos + window_size] = np.fft.ifft(transformed_audio).real
@@ -123,4 +133,4 @@ def spectral_subtraction_filter(src):
     scipy.io.wavfile.write(src[:-4] + "_correct" + ".wav", rate=rate, data=data)
 
 
-bandpass_filter("audio_files/interviews/sample_11.mp3")
+spectral_subtraction_filter("audio_files/interviews/sample_11.wav")
