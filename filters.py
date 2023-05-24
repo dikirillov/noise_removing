@@ -4,10 +4,11 @@ import scipy
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import re
 
 
 class AudioFile:
-    def __init__(self, arg1, arg2):
+    def __init__(self, arg1, arg2=None):
         """
         initializer of AudioFile. 2 different types of arguments:
             1) arg1 - input file name, arg2 - output file name
@@ -16,10 +17,13 @@ class AudioFile:
         if type(arg1) == str:
             if '.mp3' not in arg1 and '.wav' not in arg1:
                 print("Error: Invalid input file format, use mp3 or wav file")
-                sys.exit(0)
+                sys.exit(1)
             if '.mp3' not in arg2 and '.wav' not in arg2:
                 print("Error: Invalid output file format, use mp3 or wav file")
-                sys.exit(0)
+                sys.exit(1)
+
+            if arg2 is None:
+                arg2 = re.sub(r"\.", r"_correct.", arg1)
 
             self.input_file_name = arg1
             self.output_file_name = arg2
@@ -32,7 +36,7 @@ class AudioFile:
                     os.remove(dst)
                 except:
                     print("Error: Unable to read input file")
-                    sys.exit(0)
+                    sys.exit(2)
             else:
                 self.rate, self.data = scipy.io.wavfile.read(arg1)
         else:
@@ -60,18 +64,34 @@ class AudioFile:
                 os.remove(dst)
         except:
             print("Error: Unable to save output file")
-            sys.exit(0)
+            sys.exit(3)
 
-    def bandpass_filter(self):
+    def get_boarders(self, left, right):
+        """
+        calculates boarders between given seconds of the record
+        """
+        start = 0
+        end = len(self.data)
+        if left:
+            start = left * self.rate
+        if right:
+            end = right * self.rate
+
+        if end > len(self.data):
+            print("Error: Invalid right timestamp of given interval")
+            sys.exit(4)
+        return start, end
+
+    def bandpass_filter(self, left=None, right=None):
         """
         function that reduces high and low frequency noise
         """
         window_size = self.rate
-        data_size = len(self.data)
+        start, end = self.get_boarders(left, right)
 
         for channel in range(self.channels_cnt):
-            pos = 0
-            while pos + window_size < data_size:
+            pos = start
+            while pos + window_size < end:
                 transformed_audio = np.fft.fft(self.data[:, channel][pos: pos + window_size])
                 size = transformed_audio.size
                 transformed_audio[:200] = 0
@@ -81,21 +101,21 @@ class AudioFile:
                 self.data[:, channel][pos: pos + window_size] = np.fft.ifft(transformed_audio).real
                 pos += window_size
 
-    def exponentional_filter(self):
+    def exponentional_filter(self, left=None, right=None):
         """
         function that cleans the spectrum using a exponential filter.
         as a result, high and low frequencies are seriously cleared,
         the rest of the frequencies are smoothed out
         """
         window_size = int(self.rate * 1.5)
-        data_size = len(self.data)
+        start, end = self.get_boarders(left, right)
 
         for channel in range(self.channels_cnt):
-            pos = 0
-            while pos + window_size < data_size:
+            pos = start
+            while pos + window_size < end:
                 n = window_size
-                if pos + 2 * window_size > data_size:
-                    n = data_size - pos
+                if pos + 2 * window_size > end:
+                    n = end - pos
 
                 transformed_audio = np.fft.fft(self.data[:, channel][pos: pos + n])
                 inds = np.arange(n)
@@ -106,18 +126,18 @@ class AudioFile:
                 self.data[:, channel][pos: pos + n] = np.fft.ifft(transformed_audio).real
                 pos += window_size
 
-    def spectral_subtraction_filter(self):
+    def spectral_subtraction_filter(self, left=None, right=None):
         """
         this function finds the quietest 0.1 second and subtracts it from the whole record
         """
         window_size = int(self.rate * 0.1)
-        data_size = len(self.data)
+        start, end = self.get_boarders(left, right)
 
         for channel in range(self.channels_cnt):
-            pos = 0
+            pos = start
             noise = np.fft.fft(self.data[:, channel][:window_size])
             min_level = np.mean(np.abs(noise))
-            while pos + window_size < data_size:
+            while pos + window_size < end:
                 transformed_audio = np.fft.fft(self.data[:, channel][pos: pos + window_size])
                 if np.mean(np.abs(transformed_audio)) < min_level:
                     noise = transformed_audio
@@ -125,24 +145,24 @@ class AudioFile:
 
                 pos += window_size
 
-            pos = 0
-            while pos + window_size < data_size:
+            pos = start
+            while pos + window_size < end:
                 transformed_audio = np.fft.fft(self.data[:, channel][pos: pos + window_size]) - noise
                 self.data[:, channel][pos: pos + window_size] = np.fft.ifft(transformed_audio).real
                 pos += window_size
 
-    def improved_spectral_subtraction_filter(self):
+    def improved_spectral_subtraction_filter(self, left=None, right=None):
         """
         this function finds the quietest is an improved version of spectral_subtraction_filter
         it works pretty much the same, but the cleanup is applied to 0.1 second fragments
         """
         window_size = int(self.rate * 0.1)
         window_size -= window_size % 10
-        data_size = len(self.data)
+        start, end = self.get_boarders(left, right)
 
         for channel in range(self.channels_cnt):
-            external_pos = 0
-            while external_pos + window_size < data_size:
+            external_pos = start
+            while external_pos + window_size < end:
                 internal_audio_data = np.array([self.data[:, channel][external_pos:external_pos + window_size]]).T
                 internal_audio_file = AudioFile(window_size, internal_audio_data)
                 internal_audio_file.spectral_subtraction_filter()
@@ -150,7 +170,7 @@ class AudioFile:
                 self.data[external_pos:external_pos + window_size] = internal_audio_file.data
                 external_pos += window_size
 
-    def plotter(self, channel, left, right, title, xlabel, ylabel, is_spec=None):
+    def plotter(self, channel, left, right, title, xlabel, ylabel, is_spec=False):
         plot_data = self.data[:, channel][left * self.rate:right * self.rate]
         if is_spec:
             transformed_audio = np.fft.fft(plot_data)
