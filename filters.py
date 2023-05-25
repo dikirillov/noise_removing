@@ -3,7 +3,6 @@ from pydub import AudioSegment
 import scipy
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import re
 
 
@@ -33,8 +32,7 @@ class AudioFile:
                     self.rate, self.data = scipy.io.wavfile.read(dst)
                     os.remove(dst)
                 except:
-                    print("Error: Unable to read input file")
-                    sys.exit(2)
+                    exit_with_error(2, "Unable to read input file")
             else:
                 self.rate, self.data = scipy.io.wavfile.read(arg1)
         else:
@@ -61,8 +59,7 @@ class AudioFile:
                 AudioSegment.from_wav(dst).export(self.output_file_name, format="mp3")
                 os.remove(dst)
         except:
-            print("Error: Unable to save output file")
-            sys.exit(3)
+            exit_with_error(3, "Unable to save output file")
 
     def get_boarders(self, left, right):
         """
@@ -76,8 +73,7 @@ class AudioFile:
             end = right * self.rate
 
         if start < 0 or end > len(self.data):
-            print("Error: Invalid right timestamp of given interval")
-            sys.exit(4)
+            exit_with_error(4, "Invalid boarder of given timestamp interval")
         return start, end
 
     def bandpass_filter(self, left=None, right=None):
