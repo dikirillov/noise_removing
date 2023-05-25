@@ -1,49 +1,66 @@
-from pydub import AudioSegment
-import scipy
-import numpy as np
-import matplotlib.pyplot as plt
+import sys
+from filters import AudioFile, exit_with_error
 
-from filters import AudioFile
 
-file = AudioFile("audio_files/test_audio/RockAndRoll.wav", "audio_files/test_audio/RockAndRoll_bad.wav")
-file.exponentional_filter()
-file.plotter(channel=0, left=0, right=1, title="", xlabel="Время (в 1 / rate секундах)", ylabel="Амплитуда")
-file.plotter(channel=0, left=0, right=1, title="", xlabel="Частота", ylabel="Амплитуда", is_spec=True)
+def is_audio_file(file_name):
+    return file_name[-4:] in [".mp3", ".wav"]
 
-file = AudioFile("audio_files/test_audio/RockAndRoll.wav", "audio_files/test_audio/RockAndRoll_bad.wav")
-file.spectral_subtraction_filter()
-file.plotter(channel=0, left=0, right=1, title="", xlabel="Время (в 1 / rate секундах)", ylabel="Амплитуда")
-file.plotter(channel=0, left=0, right=1, title="", xlabel="Частота", ylabel="Амплитуда", is_spec=True)
 
-file = AudioFile("audio_files/test_audio/RockAndRoll.wav", "audio_files/test_audio/RockAndRoll_bad.wav")
-file.improved_spectral_subtraction_filter()
-file.plotter(channel=0, left=0, right=1, title="", xlabel="Время (в 1 / rate секундах)", ylabel="Амплитуда")
-file.plotter(channel=0, left=0, right=1, title="", xlabel="Частота", ylabel="Амплитуда", is_spec=True)
-# file.save()
-#
-#
-# import numpy as np
-# import scipy.io.wavfile as wav
-#
-# def add_noise_to_audio(input_file, output_file, noise_level):
-#     # Загрузка аудиофайла
-#     sample_rate, data = wav.read(input_file)
-#
-#     # Генерация шума с тем же размером и форматом, что и аудиофайл
-#     noise = np.random.normal(0, noise_level, data.shape)
-#
-#     # Добавление шума к аудиофайлу
-#     noisy_data = data + noise
-#
-#     # Ограничение значений аудиофайла в диапазоне от -32768 до 32767
-#     noisy_data = np.clip(noisy_data, -32768, 32767)
-#
-#     # Сохранение измененного аудиофайла
-#     wav.write(output_file, sample_rate, noisy_data.astype(np.int16))
-#
-# # Пример использования
-# input_file = "audio_files/test_audio/RockAndRoll.wav"
-# output_file = "audio_files/test_audio/RockAndRoll_bad.wav"
-# noise_level = 400  # Уровень шума (можно изменить по вашему усмотрению)
-#
-# add_noise_to_audio(input_file, output_file, noise_level)
+def validate(kwargs_list):
+    if not kwargs_list:
+        exit_with_error(0, "Invalid arguments.\n"
+                           "Please, give 2 filenames and list of filters.\n"
+                           "Supported filters: band, exp, sub, impr_sub.\n"
+                           "Supported file types: mp3, wav.")
+    defined_args = {"band", "exp", "sub", "impr_sub"}
+
+    offset = 1
+    if not is_audio_file(kwargs_list[0]):
+        exit_with_error(1, "Invalid input file format, use mp3 or wav file")
+
+    if len(kwargs_list) > 1 and is_audio_file(kwargs_list[1]):
+        offset = 2
+
+    for index in range(offset, len(kwargs_list)):
+        if (kwargs_list[index] not in defined_args) and (not kwargs_list[index].isdigit()):
+            exit_with_error(5, "Unknown filter name.")
+
+    return offset
+
+
+if __name__ == "__main__":
+    kwargs = sys.argv[1:]
+    filters_offset = validate(kwargs)
+    audio = None
+    if filters_offset == 1:
+        audio = AudioFile(kwargs[0])
+    else:
+        audio = AudioFile(kwargs[0], kwargs[1])
+
+    filters = {
+        "band": audio.bandpass_filter,
+        "exp": audio.exponentional_filter,
+        "sub": audio.spectral_subtraction_filter,
+        "impr_sub": audio.improved_spectral_subtraction_filter,
+    }
+
+    kwargs_size = len(kwargs)
+    index = filters_offset
+    while index < kwargs_size:
+        if kwargs[index] not in filters:
+            exit_with_error(5, "Unknown filter name.")
+
+        left = None
+        right = None
+        cur_filter = filters[kwargs[index]]
+        if index + 1 < kwargs_size and kwargs[index + 1].isdigit():
+            index += 1
+            left = int(kwargs[index])
+            if index + 1 < kwargs_size and kwargs[index + 1].isdigit():
+                index += 1
+                right = int(kwargs[index])
+
+        cur_filter(left, right)
+        index += 1
+
+    print("Saved cleared file to the", audio.output_file_name)

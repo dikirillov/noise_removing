@@ -7,6 +7,11 @@ import sys
 import re
 
 
+def exit_with_error(code, error_msg):
+    print("Error:", error_msg)
+    exit(code)
+
+
 class AudioFile:
     def __init__(self, arg1, arg2=None):
         """
@@ -15,13 +20,6 @@ class AudioFile:
             2) arg1 - rate, arg2 - data (check output of scipy.io.wavfile.read)
         """
         if type(arg1) == str:
-            if '.mp3' not in arg1 and '.wav' not in arg1:
-                print("Error: Invalid input file format, use mp3 or wav file")
-                sys.exit(1)
-            if '.mp3' not in arg2 and '.wav' not in arg2:
-                print("Error: Invalid output file format, use mp3 or wav file")
-                sys.exit(1)
-
             if arg2 is None:
                 arg2 = re.sub(r"\.", r"_correct.", arg1)
 
@@ -77,7 +75,7 @@ class AudioFile:
         if right:
             end = right * self.rate
 
-        if end > len(self.data):
+        if start < 0 or end > len(self.data):
             print("Error: Invalid right timestamp of given interval")
             sys.exit(4)
         return start, end
