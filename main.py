@@ -63,4 +63,5 @@ if __name__ == "__main__":
         cur_filter(left, right)
         index += 1
 
+    audio.save()
     print("Saved cleared file to the", audio.output_file_name)
