@@ -1,5 +1,6 @@
 import sys
-from filters import AudioFile, exit_with_error
+from errors import exit_with_error
+from filters import AudioFile
 
 
 def is_audio_file(file_name):
@@ -8,22 +9,19 @@ def is_audio_file(file_name):
 
 def validate(kwargs_list):
     if not kwargs_list:
-        exit_with_error(0, "Invalid arguments.\n"
-                           "Please, give 2 filenames and list of filters.\n"
-                           "Supported filters: band, exp, sub, impr_sub.\n"
-                           "Supported file types: mp3, wav.")
+        exit_with_error("no_args")
     defined_args = {"band", "exp", "sub", "impr_sub"}
 
     offset = 1
     if not is_audio_file(kwargs_list[0]):
-        exit_with_error(1, "Invalid input file format, use mp3 or wav file")
+        exit_with_error("bad_input_file", kwargs_list[0])
 
     if len(kwargs_list) > 1 and is_audio_file(kwargs_list[1]):
         offset = 2
 
     for index in range(offset, len(kwargs_list)):
         if (kwargs_list[index] not in defined_args) and (not kwargs_list[index].isdigit()):
-            exit_with_error(5, "Unknown filter name.")
+            exit_with_error("bad_filter_name", kwargs_list[index])
 
     return offset
 
@@ -48,7 +46,7 @@ if __name__ == "__main__":
     index = filters_offset
     while index < kwargs_size:
         if kwargs[index] not in filters:
-            exit_with_error(5, "Unknown filter name.")
+            exit_with_error("bad_filter_name", kwargs[index])
 
         left = None
         right = None

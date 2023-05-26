@@ -1,14 +1,9 @@
-import os
-from pydub import AudioSegment
-import scipy
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import re
-
-
-def exit_with_error(code, error_msg):
-    print("Error:", error_msg)
-    exit(code)
+import scipy
+from pydub import AudioSegment
+from errors import exit_with_error
 
 
 class AudioFile:
@@ -25,14 +20,12 @@ class AudioFile:
             self.input_file_name = arg1
             self.output_file_name = arg2
             if '.mp3' in arg1:
-                dst = "askdjfkasjdf.wav"
                 try:
                     sound = AudioSegment.from_mp3(arg1)
-                    sound.export(dst, format="wav")
-                    self.rate, self.data = scipy.io.wavfile.read(dst)
-                    os.remove(dst)
+                    self.rate = sound.frame_rate
+                    self.data = np.array(sound.get_array_of_samples()).reshape((-1, sound.channels))
                 except:
-                    exit_with_error(2, "Unable to read input file")
+                    exit_with_error("broken_input_file", self.input_file_name)
             else:
                 self.rate, self.data = scipy.io.wavfile.read(arg1)
         else:
@@ -53,12 +46,11 @@ class AudioFile:
             if ".wav" in self.output_file_name:
                 scipy.io.wavfile.write(self.output_file_name, rate=self.rate, data=self.data)
             else:
-                dst = "qwewqvqhw.wav"
-                scipy.io.wavfile.write(dst, rate=self.rate, data=self.data)
-                AudioSegment.from_wav(dst).export(self.output_file_name, format="mp3")
-                os.remove(dst)
+                output_audio = AudioSegment(self.data.tobytes(), frame_rate=self.rate,
+                                            sample_width=self.data.itemsize, channels=self.channels_cnt)
+                output_audio.export(self.output_file_name, format="mp3")
         except:
-            exit_with_error(3, "Unable to save output file")
+            exit_with_error("broken_output_file", self.output_file_name)
 
     def get_boarders(self, left, right):
         """
@@ -72,7 +64,7 @@ class AudioFile:
             end = right * self.rate
 
         if start < 0 or end > len(self.data):
-            exit_with_error(4, "Invalid boarder of given timestamp interval")
+            exit_with_error("bad_boards")
         return start, end
 
     def bandpass_filter(self, left=None, right=None):
