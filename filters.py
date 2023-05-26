@@ -25,7 +25,7 @@ class AudioFile:
             self.input_file_name = arg1
             self.output_file_name = arg2
             if '.mp3' in arg1:
-                dst = arg1.replace(".mp3", ".wav")
+                dst = "askdjfkasjdf.wav"
                 try:
                     sound = AudioSegment.from_mp3(arg1)
                     sound.export(dst, format="wav")
@@ -53,8 +53,7 @@ class AudioFile:
             if ".wav" in self.output_file_name:
                 scipy.io.wavfile.write(self.output_file_name, rate=self.rate, data=self.data)
             else:
-                dst = self.output_file_name
-                dst.replace("mp3", "wav")
+                dst = "qwewqvqhw.wav"
                 scipy.io.wavfile.write(dst, rate=self.rate, data=self.data)
                 AudioSegment.from_wav(dst).export(self.output_file_name, format="mp3")
                 os.remove(dst)
