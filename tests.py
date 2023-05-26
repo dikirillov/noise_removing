@@ -37,6 +37,10 @@ class TestMyProgram(unittest.TestCase):
                                          universal_newlines=True)
         self.assertEqual(output.strip(), "Saved cleared file to the audio_files/test_audio/RockAndRoll_correct.wav")
 
+        output = subprocess.check_output(["python", "main.py", "help"],
+                                         universal_newlines=True)
+        self.assertEqual(output.strip(), errors["help"][1])
+
     def tests_invalid_filenams(self):
         f = open(os.devnull, "w")
         test_proc = subprocess.Popen(["python", "main.py", "1"], universal_newlines=True, stdout=f)
