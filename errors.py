@@ -1,4 +1,16 @@
 errors = {
+    "help": (0, "The first parameter is the input audio file name, and the second parameter is the output \n"
+                "audio file name (optional). Next, you need to provide the names of the filters. The available \n"
+                "parameters are:\n\n"
+                "band - for applying the Bandpass filter\n"
+                "exp - for applying the Exponential filter\n"
+                "sub - for applying the Spectral subtraction filter\n"
+                "impr_sub - for applying the Improved spectral subtraction filter.\n\n"
+                "After each filter you can optionally provide two integers representing the boundaries of the \n"
+                "timestamp interval of the audio recording to which the filter will be applied. If only one integer is \n"
+                "provided, it will be interpreted as the left boundary of the segment, and the end of the \n"
+                "recording will serve as the right boundary. If no boundary values are provided, the filter will\n"
+                "be applied to the entire audiofile."),
     "no_args": (0, "Error: Invalid arguments.\n"
                    "Please, give 2 filenames and list of filters.\n"
                    "Supported filters: band, exp, sub, impr_sub.\n"
