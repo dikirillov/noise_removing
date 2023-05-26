@@ -8,6 +8,9 @@ def is_audio_file(file_name):
 
 
 def validate(kwargs_list):
+    if kwargs_list == ["help"]:
+        exit_with_error("help")
+
     if not kwargs_list:
         exit_with_error("no_args")
     defined_args = {"band", "exp", "sub", "impr_sub"}
