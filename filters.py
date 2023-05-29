@@ -125,7 +125,7 @@ class AudioFile:
             min_level = np.mean(np.abs(noise))
             while pos + window_size <= end:
                 transformed_audio = np.fft.fft(self.data[:, channel][pos: pos + window_size])
-                if np.mean(np.abs(transformed_audio)) < min_level:
+                if min_level == 0 or np.mean(np.abs(transformed_audio)) != 0:
                     noise = transformed_audio
                     min_level = np.mean(np.abs(transformed_audio))
 
