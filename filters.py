@@ -76,7 +76,7 @@ class AudioFile:
 
         for channel in range(self.channels_cnt):
             pos = start
-            while pos + window_size < end:
+            while pos + window_size <= end:
                 transformed_audio = np.fft.fft(self.data[:, channel][pos: pos + window_size])
                 size = transformed_audio.size
                 transformed_audio[:200] = 0
@@ -97,7 +97,7 @@ class AudioFile:
 
         for channel in range(self.channels_cnt):
             pos = start
-            while pos + window_size < end:
+            while pos + window_size <= end:
                 n = window_size
                 if pos + 2 * window_size > end:
                     n = end - pos
@@ -106,6 +106,7 @@ class AudioFile:
                 inds = np.arange(n)
                 alpha = 0.0000001
                 exp_filter = np.exp(-1.5 * alpha * (np.minimum(inds, n - inds) ** 2) / 2)
+
                 transformed_audio *= exp_filter
 
                 self.data[:, channel][pos: pos + n] = np.fft.ifft(transformed_audio).real
@@ -122,7 +123,7 @@ class AudioFile:
             pos = start
             noise = np.fft.fft(self.data[:, channel][:window_size])
             min_level = np.mean(np.abs(noise))
-            while pos + window_size < end:
+            while pos + window_size <= end:
                 transformed_audio = np.fft.fft(self.data[:, channel][pos: pos + window_size])
                 if np.mean(np.abs(transformed_audio)) < min_level:
                     noise = transformed_audio
@@ -131,7 +132,7 @@ class AudioFile:
                 pos += window_size
 
             pos = start
-            while pos + window_size < end:
+            while pos + window_size <= end:
                 transformed_audio = np.fft.fft(self.data[:, channel][pos: pos + window_size]) - noise
                 self.data[:, channel][pos: pos + window_size] = np.fft.ifft(transformed_audio).real
                 pos += window_size
@@ -147,7 +148,7 @@ class AudioFile:
 
         for channel in range(self.channels_cnt):
             external_pos = start
-            while external_pos + window_size < end:
+            while external_pos + window_size <= end:
                 internal_audio_data = np.array([self.data[:, channel][external_pos:external_pos + window_size]]).T
                 internal_audio_file = AudioFile(window_size, internal_audio_data)
                 internal_audio_file.spectral_subtraction_filter()
